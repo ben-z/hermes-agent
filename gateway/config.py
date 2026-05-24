@@ -876,7 +876,6 @@ def load_gateway_config() -> GatewayConfig:
                 plat_data, extra = _ensure_platform_extra_dict(platforms_data, plat.value)
                 if enabled_was_explicit:
                     plat_data["enabled"] = platform_cfg["enabled"]
-                if plat == Platform.SLACK and enabled_was_explicit:
                     extra["_enabled_explicit"] = True
                 extra.update(bridged)
 
@@ -1823,6 +1822,12 @@ def _apply_env_overrides(config: GatewayConfig) -> None:
                 continue
             platform = Platform(entry.name)
             existing_cfg = config.platforms.get(platform)
+            if (
+                existing_cfg is not None
+                and not existing_cfg.enabled
+                and existing_cfg.extra.pop("_enabled_explicit", False)
+            ):
+                continue
             # Seed candidate extras from ``env_enablement_fn`` so plugins
             # whose ``is_connected`` reads ``config.extra`` (e.g. Google
             # Chat's ``_is_connected`` checks ``config.extra["project_id"]``)
